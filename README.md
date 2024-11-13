@@ -32,6 +32,6 @@ Make sure to have `rust` and `cargo` installed. To play the game download the re
 
 ```
 git clone https://github.com/pololo300/rstris.git
-cd rstirs
+cd rstris
 cargo run
 ```
