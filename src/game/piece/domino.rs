@@ -78,26 +78,76 @@ impl Piece for Domino {
     }
 
     fn clock_rotation(&mut self, board: &Board) {
+        // placed hortizaontally
         if self.cell1.y == self.cell2.y {
-            if self.cell1.x < self.cell2.x && board.down(self.cell1).empty() {
-                self.cell2 = self.cell1.down();
-            } else if self.cell2.x < self.cell1.x && board.down(self.cell2).empty() {
+            if self.cell2.x < self.cell1.x {
+                std::mem::swap(&mut self.cell1, &mut self.cell2);
+            }
+            // self.cell1 is the left cell
+
+            // rotate over left cell
+            if self.cell1.y > 0 && board.down(self.cell1).empty() {
                 self.cell2 = self.cell1.down();
             }
-        } else {
-            if self.cell1.y > self.cell2.y && board.left(self.cell1).empty() {
+            // rotate over right cell
+            if self.cell2.y < board.height - 1 && board.up(self.cell2).empty() {
+                self.cell1 = self.cell2.up();
+            }
+        // placed vertically
+        } else if self.cell1.x == self.cell2.x {
+            if self.cell2.y > self.cell1.y {
+                std::mem::swap(&mut self.cell1, &mut self.cell2);
+            }
+            // self.cell1 is the top cell
+
+            // rotatre over bottom cell
+            if self.cell2.x < board.width - 1 && board.right(self.cell2).empty() {
+                self.cell1 = self.cell2.right();
+            }
+            // rotate top over cell
+            else if self.cell1.x > 0 && board.left(self.cell1).empty() {
                 self.cell2 = self.cell1.left();
-            } else if self.cell2.y > self.cell1.y && board.left(self.cell2).empty() {
-                self.cell1 = self.cell2.left();
             }
         }
     }
 
-    fn anticlock_rotation(&mut self, board: &Board) {}
+    fn anticlock_rotation(&mut self, board: &Board) {
+        // placed hortizaontally
+        if self.cell1.y == self.cell2.y {
+            if self.cell2.x < self.cell1.x {
+                std::mem::swap(&mut self.cell1, &mut self.cell2);
+            }
+            // self.cell1 is the left cell
+
+            // rotate over right cell
+            if self.cell2.y > 0 && board.down(self.cell2).empty() {
+                self.cell1 = self.cell2.down();
+            }
+            // rotate over left cell
+            if self.cell1.y < board.height - 1 && board.up(self.cell1).empty() {
+                self.cell2 = self.cell1.up();
+            }
+        // placed vertically
+        } else if self.cell1.x == self.cell2.x {
+            if self.cell2.y > self.cell1.y {
+                std::mem::swap(&mut self.cell1, &mut self.cell2);
+            }
+            // self.cell1 is the top cell
+
+            // rotatre over bottom cell
+            if self.cell2.x > 0 && board.left(self.cell2).empty() {
+                self.cell1 = self.cell2.left();
+            }
+            // rotate top over cell
+            else if self.cell1.x < board.width - 1 && board.right(self.cell1).empty() {
+                self.cell2 = self.cell1.right();
+            }
+        }
+    }
 
     fn fix(&self, board: &Board) -> bool {
         // right side
-        if self.cell1.y == 0 || self.cell2.x == 0 {
+        if self.cell1.y == 0 || self.cell2.y == 0 {
             return true;
         }
 
