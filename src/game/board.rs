@@ -160,7 +160,7 @@ impl Board {
     }
 
     pub fn clear_rows(&mut self) -> &mut Self {
-        for y in 0..self.height {
+        for y in (0..self.height).rev() {
             let mut full = true;
             // TODO: continue amb tags?
             for x in 0..self.width {

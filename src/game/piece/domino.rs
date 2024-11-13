@@ -77,6 +77,15 @@ impl Piece for Domino {
         self.cell2.y -= 1;
     }
 
+    fn hard_drop(&mut self, board: &Board) {
+        loop {
+            if self.fix(board) {
+                break;
+            }
+            self.drop(board);
+        }
+    }
+
     fn clock_rotation(&mut self, board: &Board) {
         // placed hortizaontally
         if self.cell1.y == self.cell2.y {

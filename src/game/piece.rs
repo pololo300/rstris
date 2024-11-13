@@ -10,6 +10,7 @@ pub trait Piece {
     fn left_slide(&mut self, board: &Board);
     fn right_slide(&mut self, board: &Board);
     fn drop(&mut self, board: &Board);
+    fn hard_drop(&mut self, board: &Board);
     fn clock_rotation(&mut self, board: &Board);
     fn anticlock_rotation(&mut self, board: &Board);
     fn fix(&self, board: &Board) -> bool;

@@ -4,6 +4,7 @@ pub mod piece;
 use crate::game::board::Board;
 use crate::game::piece::domino::Domino;
 use crate::game::piece::Piece;
+use rand::Rng;
 
 use ggez::{
     // context,
@@ -14,24 +15,59 @@ use ggez::{
     GameResult,
 };
 
-const GRID_SIZE: (i32, i32) = (10, 20);
-const CELL_RADIUS: i32 = 2;
 const GRID_CELL_SIZE: i32 = 32;
-const SCREEN_SIZE: (f32, f32) = (
-    GRID_SIZE.0 as f32 * GRID_CELL_SIZE as f32,
-    GRID_SIZE.1 as f32 * GRID_CELL_SIZE as f32,
-);
+const CELL_RADIUS: i32 = 2;
+
+struct Params {
+    grid_size: (i32, i32),
+    screen_size: (f32, f32),
+}
+
+impl Params {
+    fn new(rows: u32, columns: u32) -> Params {
+        Params {
+            grid_size: (columns as i32, rows as i32),
+            screen_size: (
+                columns as f32 * GRID_CELL_SIZE as f32,
+                rows as f32 * GRID_CELL_SIZE as f32,
+            ),
+        }
+    }
+}
 
 struct GameState {
     gameboard: Board,
     piece: Domino,
+    params: Params,
 }
 
 impl GameState {
-    pub fn new() -> GameState {
-        let gameboard = Board::new(GRID_SIZE.0 as usize, GRID_SIZE.1 as usize);
+    pub fn new(params: Params) -> GameState {
+        let gameboard = Board::new(params.grid_size.0 as usize, params.grid_size.1 as usize);
         let piece = Domino::new(&gameboard);
-        GameState { gameboard, piece }
+        GameState {
+            gameboard,
+            piece,
+            params,
+        }
+    }
+
+    fn big_square(&self, x: usize, y: usize) -> graphics::Rect {
+        graphics::Rect::new_i32(
+            GRID_CELL_SIZE * (x as i32),
+            GRID_CELL_SIZE * (self.params.grid_size.1 - 1 - y as i32),
+            GRID_CELL_SIZE,
+            GRID_CELL_SIZE,
+        )
+    }
+
+    fn inside_square(&self, x: usize, y: usize) -> graphics::Rect {
+        graphics::Rect::new_i32(
+            GRID_CELL_SIZE * x as i32 + CELL_RADIUS,
+            GRID_CELL_SIZE * (self.params.grid_size.1 - 1 - y as i32) + CELL_RADIUS,
+            GRID_CELL_SIZE - 2 * CELL_RADIUS,
+            GRID_CELL_SIZE - 2 * CELL_RADIUS,
+        )
     }
 }
 
@@ -46,12 +82,14 @@ impl event::EventHandler<ggez::GameError> for GameState {
             Some(KeyCode::Left) => self.piece.left_slide(&self.gameboard),
             Some(KeyCode::Right) => self.piece.right_slide(&self.gameboard),
             Some(KeyCode::Down) => self.piece.drop(&self.gameboard),
-            Some(KeyCode::A) => self.piece.clock_rotation(&self.gameboard),
-            Some(KeyCode::D) => self.piece.anticlock_rotation(&self.gameboard),
+            Some(KeyCode::D) => self.piece.clock_rotation(&self.gameboard),
+            Some(KeyCode::A) => self.piece.anticlock_rotation(&self.gameboard),
             Some(KeyCode::Space) => {
                 if self.piece.fix(&self.gameboard) {
                     self.gameboard.merge(&self.piece).clear_rows();
                     self.piece = Domino::new(&self.gameboard);
+                } else {
+                    self.piece.hard_drop(&self.gameboard)
                 }
             }
             _ => {}
@@ -74,7 +112,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
             canvas.draw(
                 &graphics::Quad,
                 graphics::DrawParam::new()
-                    .dest_rect(big_square(cell.x(), cell.y()))
+                    .dest_rect(self.big_square(cell.x(), cell.y()))
                     .color(darker),
             );
 
@@ -82,64 +120,79 @@ impl event::EventHandler<ggez::GameError> for GameState {
             canvas.draw(
                 &graphics::Quad,
                 graphics::DrawParam::new()
-                    .dest_rect(inside_square(cell.x(), cell.y()))
+                    .dest_rect(self.inside_square(cell.x(), cell.y()))
                     .color(color),
             );
         }
 
-        canvas.draw(
-            &graphics::Quad,
-            graphics::DrawParam::new()
-                .dest_rect(big_square(self.piece.cell1.x, self.piece.cell1.y))
-                .color([0.0, 1.0, 1.0, 1.0]),
-        );
-        canvas.draw(
-            &graphics::Quad,
-            graphics::DrawParam::new()
-                .dest_rect(inside_square(self.piece.cell1.x, self.piece.cell1.y))
-                .color([0.0, 0.8, 0.8, 1.0]),
-        );
-        canvas.draw(
-            &graphics::Quad,
-            graphics::DrawParam::new()
-                .dest_rect(big_square(self.piece.cell2.x, self.piece.cell2.y))
-                .color([0.0, 1.0, 1.0, 1.0]),
-        );
-        canvas.draw(
-            &graphics::Quad,
-            graphics::DrawParam::new()
-                .dest_rect(inside_square(self.piece.cell2.x, self.piece.cell2.y))
-                .color([0.0, 0.8, 0.8, 1.0]),
-        );
+        for cell in self.piece.positions() {
+            canvas.draw(
+                &graphics::Quad,
+                graphics::DrawParam::new()
+                    .dest_rect(self.big_square(cell.x, cell.y))
+                    .color([0.5, 0.0, 1.0, 1.0]),
+            );
+            canvas.draw(
+                &graphics::Quad,
+                graphics::DrawParam::new()
+                    .dest_rect(self.inside_square(cell.x, cell.y))
+                    .color([0.3, 0.0, 0.8, 1.0]),
+            );
+        }
         canvas.finish(ctx)?;
         Ok(())
     }
 }
 
-fn big_square(x: usize, y: usize) -> graphics::Rect {
-    graphics::Rect::new_i32(
-        GRID_CELL_SIZE * (x as i32),
-        GRID_CELL_SIZE * (GRID_SIZE.1 - 1 - y as i32),
-        GRID_CELL_SIZE,
-        GRID_CELL_SIZE,
-    )
-}
+pub fn game(rows: u32, columns: u32, pieces: u32) -> GameResult {
+    let params = Params::new(rows, columns);
 
-fn inside_square(x: usize, y: usize) -> graphics::Rect {
-    graphics::Rect::new_i32(
-        GRID_CELL_SIZE * x as i32 + CELL_RADIUS,
-        GRID_CELL_SIZE * (GRID_SIZE.1 - 1 - y as i32) + CELL_RADIUS,
-        GRID_CELL_SIZE - 2 * CELL_RADIUS,
-        GRID_CELL_SIZE - 2 * CELL_RADIUS,
-    )
-}
-
-pub fn game() -> GameResult {
     let (ctx, events_loop) = ggez::ContextBuilder::new("snake", "Gray Olson")
         .window_setup(ggez::conf::WindowSetup::default().title("Snake!"))
-        .window_mode(ggez::conf::WindowMode::default().dimensions(SCREEN_SIZE.0, SCREEN_SIZE.1))
+        .window_mode(
+            ggez::conf::WindowMode::default()
+                .dimensions(params.screen_size.0, params.screen_size.1),
+        )
         .build()?;
 
-    let state = GameState::new();
+    let mut state = GameState::new(params);
+    let mut rng = rand::thread_rng();
+    for _ in 0..pieces {
+        let col = rng.gen_range(0..state.gameboard.width / 2);
+        let left = matches!(rng.gen_range(0..=1), 1);
+        for _ in 0..col {
+            if left {
+                state.piece.left_slide(&state.gameboard);
+            } else {
+                state.piece.right_slide(&state.gameboard);
+            }
+        }
+        for _ in 0..100 {
+            match rng.gen_range(0..=4) {
+                0 => state.piece.drop(&state.gameboard),
+                1 => state.piece.left_slide(&state.gameboard),
+                2 => state.piece.right_slide(&state.gameboard),
+                3 => state.piece.clock_rotation(&state.gameboard),
+                4 => state.piece.anticlock_rotation(&state.gameboard),
+                _ => (),
+            };
+        }
+
+        for _ in 0..100 {
+            match rng.gen_range(0..=4) {
+                0 => state.piece.drop(&state.gameboard),
+                1 => state.piece.left_slide(&state.gameboard),
+                2 => state.piece.right_slide(&state.gameboard),
+                3 => state.piece.clock_rotation(&state.gameboard),
+                4 => state.piece.anticlock_rotation(&state.gameboard),
+                _ => (),
+            };
+            if state.piece.fix(&state.gameboard) {
+                state.gameboard.merge(&state.piece).clear_rows();
+                state.piece = Domino::new(&state.gameboard);
+                break;
+            }
+        }
+    }
     event::run(ctx, events_loop, state)
 }
