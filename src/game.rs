@@ -88,6 +88,12 @@ impl event::EventHandler<ggez::GameError> for GameState {
                 if self.piece.fix(&self.gameboard) {
                     self.gameboard.merge(&self.piece).clear_rows();
                     self.piece = Domino::new(&self.gameboard);
+                    // random initial orientation
+                    // let mut rng = rand::thread_rng();
+                    // let col = rng.gen_range(0..2);
+                    // if col == 0 {
+                    //     self.piece.self.piece.clock_rotation(&self.gameboard)
+                    // }
                 } else {
                     self.piece.hard_drop(&self.gameboard)
                 }

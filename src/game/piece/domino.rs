@@ -94,13 +94,10 @@ impl Piece for Domino {
             }
             // self.cell1 is the left cell
 
-            // rotate over left cell
-            if self.cell1.y > 0 && board.down(self.cell1).empty() {
-                self.cell2 = self.cell1.down();
-            }
-            // rotate over right cell
             if self.cell2.y < board.height - 1 && board.up(self.cell2).empty() {
                 self.cell1 = self.cell2.up();
+            } else if self.cell1.y < board.height - 1 && board.up(self.cell1).empty() {
+                self.cell2 = self.cell1.up();
             }
         // placed vertically
         } else if self.cell1.x == self.cell2.x {
@@ -109,13 +106,10 @@ impl Piece for Domino {
             }
             // self.cell1 is the top cell
 
-            // rotatre over bottom cell
             if self.cell2.x < board.width - 1 && board.right(self.cell2).empty() {
                 self.cell1 = self.cell2.right();
-            }
-            // rotate top over cell
-            else if self.cell1.x > 0 && board.left(self.cell1).empty() {
-                self.cell2 = self.cell1.left();
+            } else if self.cell1.x < board.width - 1 && board.right(self.cell1).empty() {
+                self.cell2 = self.cell1.right();
             }
         }
     }
@@ -128,13 +122,10 @@ impl Piece for Domino {
             }
             // self.cell1 is the left cell
 
-            // rotate over right cell
-            if self.cell2.y > 0 && board.down(self.cell2).empty() {
+            if self.cell1.y > 0 && board.down(self.cell1).empty() {
+                self.cell2 = self.cell1.down();
+            } else if self.cell2.y > 0 && board.down(self.cell2).empty() {
                 self.cell1 = self.cell2.down();
-            }
-            // rotate over left cell
-            if self.cell1.y < board.height - 1 && board.up(self.cell1).empty() {
-                self.cell2 = self.cell1.up();
             }
         // placed vertically
         } else if self.cell1.x == self.cell2.x {
@@ -143,13 +134,10 @@ impl Piece for Domino {
             }
             // self.cell1 is the top cell
 
-            // rotatre over bottom cell
             if self.cell2.x > 0 && board.left(self.cell2).empty() {
                 self.cell1 = self.cell2.left();
-            }
-            // rotate top over cell
-            else if self.cell1.x < board.width - 1 && board.right(self.cell1).empty() {
-                self.cell2 = self.cell1.right();
+            } else if self.cell1.x > 0 && board.left(self.cell1).empty() {
+                self.cell2 = self.cell1.left();
             }
         }
     }
